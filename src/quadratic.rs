@@ -28,6 +28,12 @@ mod tests {
 
     #[test]
     fn test_quad() {
-        assert_eq!(quad(-4044.0, 0.0001636, -7550.0, 2750.0), 1.5201295999995637);
+        let curve = QuadCurve {
+            scalar: 1.0,
+            a: -4044.0, 
+            b: 0.0001636, 
+            c: -7550.0
+        };
+        assert_eq!(curve.calc(2750.0), 1.5201295999995637);
     }
 }

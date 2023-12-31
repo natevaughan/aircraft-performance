@@ -22,9 +22,7 @@ impl Scaled for Line {
 }
 
 pub fn interpolate_linear(first: f64, second: f64, scalar: f64) -> f64 {
-    let calc = (second - first) * scalar + first;
-    println!("Interpolating {} and {} using scalar {}: {}", first, second, scalar, calc);
-    calc
+    (second - first) * scalar + first
 }
 
 pub fn scale(first: f64, second: f64, val: f64) -> f64 {

@@ -13,7 +13,7 @@ mod quadratic;
 fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() < 4 {
-        println!("Usage: cargo run <outside_air_temp> <pressure_alt> <take_off_weight> <headwind>");
+        println!("Usage: aircraft-performance <outside_air_temp> <pressure_alt> <take_off_weight> <headwind>");
         return
     }
     let iso_temp_c: f64 = args[1].parse().expect("Please provide a numeric value for ISO temp");
@@ -51,14 +51,12 @@ fn main() {
     }];
 
     let (nearest_low, nearest_high) = search_for_nearest_curves(&curves, pressure_alt);
-    println!("Nearest two are {} and {}", nearest_low.scalar(), nearest_high.scalar());
 
     let val1 = nearest_low.calc(iso_temp_f);
     let val2 = nearest_high.calc(iso_temp_f);
     let init_roll = interpolate_linear(val1, val2, scale(nearest_low.scalar(), nearest_high.scalar(), pressure_alt));
     let weight_scalar = scale(2000.0, 2750.0, take_off_weight);
     let vr = interpolate_linear(60.0, 71.0, weight_scalar);
-    println!("Initial roll: {:>5}", init_roll.round() as i64);
 
     // Second calc
     let weight_curves = [QuadCurve {
@@ -89,11 +87,9 @@ fn main() {
     }];
 
     let (first, second) = search_for_nearest_curves(&weight_curves, init_roll);
-    println!("Nearest two are {} and {}", first.scalar(), second.scalar());
     let val3 = first.calc(take_off_weight);
     let val4 = second.calc(take_off_weight);
     let adj_roll = interpolate_linear(val3, val4, scale(first.scalar(), second.scalar(), init_roll));
-    println!("adjusted for weight roll: {:>5}", adj_roll.round() as i64);
 
     // Third calc
     let lines = [Line {
@@ -119,12 +115,11 @@ fn main() {
     }];
 
     let (first_l, second_l) = search_for_nearest_curves(&lines, adj_roll);
-    println!("Nearest two are {} and {}", first_l.scalar(), second_l.scalar());
     let val5 = first_l.calc(wind);
     let val6 = second_l.calc(wind);
     let final_roll = interpolate_linear(val5, val6, scale(first_l.scalar(), second_l.scalar(), adj_roll));
-    println!("final roll: {:>5}", final_roll.round() as i64);
-    println!("Vr:         {:>5}", vr.round() as i64);
+    println!("Ground roll: {:>5}", final_roll.round() as i64);
+    println!("Vr:          {:>5}", vr.round() as i64);
 }
 
 fn search_for_nearest_curves<T: Scaled>(curves: &[T], scalar: f64) -> (&T, &T) {
