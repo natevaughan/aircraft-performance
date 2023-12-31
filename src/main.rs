@@ -1,6 +1,6 @@
 use std::env;
-use arrow_performance::Scaled;
-use arrow_performance::Calculable;
+use aircraft_performance::Scaled;
+use aircraft_performance::Calculable;
 use crate::linear::scale;
 use crate::linear::interpolate_linear;
 use crate::linear::lin;

@@ -1,5 +1,5 @@
-use arrow_performance::Scaled;
-use arrow_performance::Calculable;
+use aircraft_performance::Scaled;
+use aircraft_performance::Calculable;
 
 #[derive(Debug)]
 #[derive(PartialEq)]

@@ -3,5 +3,5 @@
 version = 3
 
 [[package]]
-name = "arrow-performance"
+name = "aircraft-performance"
 version = "0.1.0"
