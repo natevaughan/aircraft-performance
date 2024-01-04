@@ -1,0 +1,30 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:dev.db"
+}
+
+generator client {
+  provider = "cargo prisma"
+  output   = "../src/prisma/model.rs"
+}
+
+model Manufacturer {
+  uuid     String     @id
+  name     String
+  aircraft Aircraft[]
+}
+
+model Aircraft {
+  uuid              String       @id
+  name              String
+  identifier        String
+  manufacturer      Manufacturer @relation(fields: [manufacturer_uuid], references: [uuid])
+  manufacturer_uuid String
+  performance       Performance? @relation(fields: [performance_uuid], references: [uuid])
+  performance_uuid  String?      @unique
+}
+
+model Performance {
+  uuid     String    @id
+  aircraft Aircraft?
+}
