@@ -1,12 +1,16 @@
 use aircraft_performance::Calculable;
+use aircraft_performance::Calculation;
 use aircraft_performance::Criteria;
 use aircraft_performance::PerformanceData;
 use aircraft_performance::Scaled;
-use linear::scale;
-use linear::interpolate_linear;
+use aircraft_performance::search_for_nearest_curves;
+use aircraft_performance::scale;
+use aircraft_performance::interpolate_linear;
 use linear::lin;
 use linear::Line;
 use quadratic::QuadCurve;
+
+use self::quadratic::QuadCalculation;
 
 mod linear;
 mod quadratic;
@@ -42,11 +46,13 @@ pub fn calculate(c: Criteria) -> PerformanceData {
         c: 1064.07
     }];
 
-    let (nearest_low, nearest_high) = search_for_nearest_curves(&curves, c.pressure_alt);
 
-    let val1 = nearest_low.calc(iso_temp_f);
-    let val2 = nearest_high.calc(iso_temp_f);
-    let init_roll = interpolate_linear(val1, val2, scale(nearest_low.scalar(), nearest_high.scalar(), c.pressure_alt));
+    let c1 = QuadCalculation {
+        input_name: "temp_f".to_string(),
+        quad_curves: Vec::from(curves)
+    };
+
+    let init_roll = c1.calculate(iso_temp_f, c.pressure_alt);
     let weight_scalar = scale(2000.0, 2750.0, c.take_off_weight);
     let vr = interpolate_linear(60.0, 71.0, weight_scalar);
 
@@ -113,64 +119,5 @@ pub fn calculate(c: Criteria) -> PerformanceData {
     PerformanceData {
         ground_roll: final_roll.round() as i64,
         vr: vr.round() as i64
-    }
-}
-
-fn search_for_nearest_curves<T: Scaled>(curves: &[T], scalar: f64) -> (&T, &T) {
-
-    if curves.len() < 2 {
-        panic!("Cannot interpolate fewer than 2 weight_curves")
-    }
-
-    let mut smallest = &curves[0];
-    let mut second_smallest = &curves[1];
-    for x in curves {
-        if (scalar - x.scalar()).abs() < (scalar - smallest.scalar()).abs() {
-            second_smallest = smallest;
-            smallest = &x;
-        }
-    }
-    (smallest, second_smallest)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    const SMALLEST: QuadCurve = QuadCurve { scalar: -3.0, a: 1.0, b: 1.0, c: 1.0 };
-    const MIDDLE: QuadCurve = QuadCurve { scalar: -2.0, a: 1.0, b: 1.0, c: 1.0 };
-    const LARGEST: QuadCurve = QuadCurve { scalar: 4.0, a: 1.0, b: 1.0, c: 1.0 };
-    const X_LARGEST: QuadCurve = QuadCurve { scalar: 400.0, a: 1.0, b: 1.0, c: 1.0 };
-
-    #[test]
-    fn test_search_for_nearest_curves_order() {
-        let ordered = [SMALLEST, MIDDLE, LARGEST];
-        let (first, second) = search_for_nearest_curves(&ordered, -6.0);
-        assert_eq!(first, &SMALLEST);
-        assert_eq!(second, &MIDDLE);
-    }
-
-    #[test]
-    fn test_search_for_nearest_curves_two_in_wrong_order() {
-        let ordered = [LARGEST, SMALLEST];
-        let (first, second) = search_for_nearest_curves(&ordered, -6.0);
-        assert_eq!(first, &SMALLEST);
-        assert_eq!(second, &LARGEST);
-    }
-
-    #[test]
-    fn test_search_for_nearest_curves_unordered() {
-        let ordered = [MIDDLE, LARGEST, SMALLEST, X_LARGEST];
-        let (first, second) = search_for_nearest_curves(&ordered, -6.0);
-        assert_eq!(first, &SMALLEST);
-        assert_eq!(second, &MIDDLE);
-    }
-
-    #[test]
-    fn test_search_for_nearest_curves_reverse() {
-        let ordered = [X_LARGEST, LARGEST, MIDDLE, SMALLEST];
-        let (first, second) = search_for_nearest_curves(&ordered, -6.0);
-        assert_eq!(first, &SMALLEST);
-        assert_eq!(second, &MIDDLE);
     }
 }
