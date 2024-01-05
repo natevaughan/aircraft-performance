@@ -1,9 +1,6 @@
-use aircraft_performance::Calculable;
 use aircraft_performance::Calculation;
 use aircraft_performance::Criteria;
 use aircraft_performance::PerformanceData;
-use aircraft_performance::Scaled;
-use aircraft_performance::search_for_nearest_curves;
 use aircraft_performance::scale;
 use aircraft_performance::interpolate_linear;
 use linear::lin;
@@ -11,6 +8,7 @@ use linear::Line;
 use quadratic::QuadCurve;
 
 use self::quadratic::QuadCalculation;
+use self::linear::LinearCalculation;
 
 mod linear;
 mod quadratic;
@@ -84,10 +82,12 @@ pub fn calculate(c: Criteria) -> PerformanceData {
         c: -278.691
     }];
 
-    let (first, second) = search_for_nearest_curves(&weight_curves, init_roll);
-    let val3 = first.calc(c.take_off_weight);
-    let val4 = second.calc(c.take_off_weight);
-    let adj_roll = interpolate_linear(val3, val4, scale(first.scalar(), second.scalar(), init_roll));
+    let c2 = QuadCalculation {
+        input_name: "take_off_weight".to_string(),
+        quad_curves: Vec::from(weight_curves)
+    };
+
+    let adj_roll = c2.calculate(c.take_off_weight, init_roll);
 
     // Third calc
     let lines = [Line {
@@ -112,10 +112,13 @@ pub fn calculate(c: Criteria) -> PerformanceData {
         b: 3350.0,
     }];
 
-    let (first_l, second_l) = search_for_nearest_curves(&lines, adj_roll);
-    let val5 = first_l.calc(c.headwind);
-    let val6 = second_l.calc(c.headwind);
-    let final_roll = interpolate_linear(val5, val6, scale(first_l.scalar(), second_l.scalar(), adj_roll));
+    let c3 = LinearCalculation {
+        input_name: "headwind".to_string(),
+        lines: Vec::from(lines)
+    };
+
+    let final_roll = c3.calculate(c.headwind, adj_roll);
+
     PerformanceData {
         ground_roll: final_roll.round() as i64,
         vr: vr.round() as i64
